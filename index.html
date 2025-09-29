@@ -1,0 +1,2025 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitnessGen - Générateur de Programmes Fitness</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="exercises.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #000000;
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+
+        .title {
+            font-size: 3.5rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 3s ease infinite;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 20px rgba(255, 255, 255, 0.3); }
+            to { text-shadow: 0 0 30px rgba(255, 255, 255, 0.6), 0 0 40px rgba(255, 255, 255, 0.4); }
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #cccccc;
+            opacity: 0.8;
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--border-color, #ffffff);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255, 255, 255, 0.1);
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            margin-bottom: 25px;
+            color: #ffffff;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #ffffff;
+            font-size: 1.1rem;
+        }
+
+        .form-select, .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid var(--border-color, #ffffff);
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-select:focus, .form-input:focus {
+            outline: none;
+            border-color: #4ecdc4;
+            box-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+        }
+
+        .form-select option {
+            background: #000000;
+            color: #ffffff;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            border: none;
+            color: #000000;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+            display: inline-block;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.5);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn.secondary {
+            background: linear-gradient(45deg, #45b7d1, #96ceb4);
+        }
+
+        .generate-btn {
+            display: block;
+            width: 100%;
+            max-width: 300px;
+            margin: 30px auto 0;
+        }
+
+        .program-display {
+            margin-top: 30px;
+        }
+
+        .workout-day {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color, #ffffff);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            min-height: 400px;
+        }
+
+        .day-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            color: #000000;
+        }
+
+        .exercise {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        .exercise-name {
+            font-weight: bold;
+            color: #4ecdc4;
+            margin-bottom: 5px;
+        }
+
+        .exercise-details {
+            color: #cccccc;
+            font-size: 0.9rem;
+        }
+
+        .options-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid var(--border-color, #ffffff);
+            border-radius: 10px;
+            padding: 15px;
+            z-index: 100;
+        }
+
+        .options-toggle {
+            background: linear-gradient(45deg, #45b7d1, #96ceb4);
+            border: none;
+            color: #000000;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .options-content {
+            display: block;
+            margin-top: 10px;
+            width: 320px; /* Largeur fixe pour toutes les langues */
+        }
+
+        .color-picker {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+            max-width: 280px;
+        }
+
+        .color-option {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            transition: all 0.3s ease;
+        }
+
+        .color-option:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            animation: bubbleEmber 15s linear infinite;
+            opacity: 0.7;
+        }
+
+        .particle.bubble {
+            animation: bubbleFloat 12s linear infinite;
+            border-radius: 50%;
+        }
+
+        .particle.ember {
+            animation: emberFloat 18s linear infinite;
+            border-radius: 20% 80% 70% 30%;
+        }
+
+        @keyframes bubbleFloat {
+            0% {
+                transform: translateY(100vh) translateX(0px) rotate(0deg) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.7;
+            }
+            50% {
+                transform: translateY(50vh) translateX(50px) rotate(180deg) scale(1.2);
+            }
+            90% {
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(-100px) translateX(-30px) rotate(360deg) scale(0.5);
+                opacity: 0;
+            }
+        }
+
+        @keyframes emberFloat {
+            0% {
+                transform: translateY(100vh) translateX(0px) rotate(0deg) scale(0.3);
+                opacity: 0;
+            }
+            5% {
+                opacity: 0.8;
+            }
+            30% {
+                transform: translateY(70vh) translateX(-40px) rotate(90deg) scale(1);
+            }
+            60% {
+                transform: translateY(30vh) translateX(60px) rotate(180deg) scale(0.8);
+            }
+            90% {
+                opacity: 0.6;
+            }
+            100% {
+                transform: translateY(-100px) translateX(20px) rotate(270deg) scale(0.1);
+                opacity: 0;
+            }
+        }
+
+        @keyframes bubbleEmber {
+            0% {
+                transform: translateY(100vh) translateX(0px) rotate(0deg) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.7;
+            }
+            40% {
+                transform: translateY(60vh) translateX(80px) rotate(120deg) scale(1.5);
+            }
+            70% {
+                transform: translateY(20vh) translateX(-60px) rotate(240deg) scale(0.8);
+            }
+            90% {
+                opacity: 0.5;
+            }
+            100% {
+                transform: translateY(-100px) translateX(40px) rotate(360deg) scale(0.2);
+                opacity: 0;
+            }
+        }
+
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            border: none;
+            color: #000000;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            z-index: 100;
+            display: none;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .collapsible-label {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .collapsible-label:hover {
+            color: #4ecdc4;
+        }
+
+        .arrow {
+            transition: transform 0.3s ease;
+            font-size: 1.2rem;
+        }
+
+        .exercise-selector {
+            display: none;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .exercise-column {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color, rgba(255, 255, 255, 0.3));
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .exercise-column h4 {
+            color: #4ecdc4;
+            margin-bottom: 10px;
+        }
+
+        .exercise-list {
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .exercise-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 5px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .exercise-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .exercise-checkbox {
+            margin-right: 8px;
+        }
+
+        .program-days {
+            display: flex;
+            gap: 15px;
+            padding: 20px;
+            max-width: 100%;
+        }
+
+        /* Pour 3 jours ou moins : affichage en grille centrée */
+        .program-days:not(.horizontal-days) {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .program-days:not(.horizontal-days) .day-card {
+            flex: 0 0 350px;
+            min-height: 500px;
+            max-width: calc(50% - 15px);
+        }
+
+        /* Pour plus de 3 jours : affichage horizontal fixe */
+        .program-days.horizontal-days {
+            flex-wrap: nowrap;
+            justify-content: flex-start;
+            overflow-x: auto;
+        }
+
+        .program-days.horizontal-days .day-card {
+            flex: 0 0 calc(100% / 7 - 15px);
+            min-height: 500px;
+            min-width: calc(100% / 7 - 15px);
+            max-width: calc(100% / 7 - 15px);
+        }
+
+        @media (max-width: 1200px) {
+            .program-days:not(.horizontal-days) .day-card {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+
+            .program-days.horizontal-days .day-card {
+                flex: 0 0 200px;
+                min-width: 200px;
+                max-width: 200px;
+            }
+        }
+
+        .day-header {
+            background: linear-gradient(45deg, var(--day-color), var(--day-color-dark));
+            color: #000000;
+            padding: 15px;
+            border-radius: 10px 10px 0 0;
+            font-weight: bold;
+            text-align: center;
+            font-size: 1.2rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #4ecdc4;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .title { font-size: 2.5rem; }
+            .exercise-selector { grid-template-columns: 1fr; }
+            .options-panel { position: static; margin-bottom: 20px; }
+            .program-days { flex-direction: column; }
+            .day-card { flex: none; margin-bottom: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+
+    <!-- Bouton retour -->
+    <button class="back-button" id="back-button">← Retour au questionnaire</button>
+
+        <!-- Options Panel -->
+    <div class="options-panel">
+        <button class="options-toggle" id="options-toggle">⚙️ Options</button>
+        <div class="options-content" id="options-content">
+            <div class="form-group">
+                <label class="form-label" data-i18n="language">Langue / Language:</label>
+                <select class="form-select" id="language-select">
+                    <option value="auto" data-i18n="auto-detect">Détection automatique</option>
+                    <option value="fr" data-i18n="french">Français</option>
+                    <option value="en" data-i18n="english">English</option>
+                    <option value="de" data-i18n="german">Deutsch</option>
+                    <option value="es" data-i18n="spanish">Español</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" data-i18n="border-color">Couleur des cases / Border Color:</label>
+                <div class="color-picker">
+                    <div class="color-option" data-color="#ffffff" style="background: #ffffff;" title="Blanc / White"></div>
+                    <div class="color-option" data-color="#ff6b6b" style="background: #ff6b6b;" title="Rouge corail / Coral Red"></div>
+                    <div class="color-option" data-color="#4ecdc4" style="background: #4ecdc4;" title="Turquoise"></div>
+                    <div class="color-option" data-color="#45b7d1" style="background: #45b7d1;" title="Bleu ciel / Sky Blue"></div>
+                    <div class="color-option" data-color="#96ceb4" style="background: #96ceb4;" title="Vert menthe / Mint Green"></div>
+                    <div class="color-option" data-color="#ffeaa7" style="background: #ffeaa7;" title="Jaune pâle / Pale Yellow"></div>
+                    <div class="color-option" data-color="#dda0dd" style="background: #dda0dd;" title="Violet"></div>
+                    <div class="color-option" data-color="#ffb6c1" style="background: #ffb6c1;" title="Rose / Pink"></div>
+                    <div class="color-option" data-color="#98d8c8" style="background: #98d8c8;" title="Vert d'eau / Water Green"></div>
+                    <div class="color-option" data-color="#f7dc6f" style="background: #f7dc6f;" title="Or / Gold"></div>
+                    <div class="color-option" data-color="#bb8fce" style="background: #bb8fce;" title="Lavande / Lavender"></div>
+                    <div class="color-option" data-color="#f8c471" style="background: #f8c471;" title="Orange"></div>
+                    <div class="color-option" data-color="#82e0aa" style="background: #82e0aa;" title="Vert printemps / Spring Green"></div>
+                    <div class="color-option" data-color="#f1948a" style="background: #f1948a;" title="Corail / Coral"></div>
+                    <div class="color-option" data-color="#85c1e9" style="background: #85c1e9;" title="Bleu poudre / Powder Blue"></div>
+                    <div class="color-option" data-color="#f4d03f" style="background: #f4d03f;" title="Jaune soleil / Sun Yellow"></div>
+                </div>
+            </div>
+
+        <div class="form-group">
+            <button class="btn" id="download-pdf" data-i18n="download-pdf">📄 Télécharger en PDF / Download PDF</button>
+            <div id="pdf-warning" style="color: #ff6b6b; font-size: 0.9rem; margin-top: 5px; display: none;" data-i18n="generate-program-first">Générez d'abord un programme</div>
+        </div>
+        </div>
+    </div>
+
+    <!-- Modal pour les champs manquants -->
+    <div class="modal" id="missing-fields-modal">
+        <div class="modal-content">
+            <h3 style="color: #ff6b6b; margin-bottom: 15px;" data-i18n="modal-warning">⚠️ Champs obligatoires manquants</h3>
+            <p style="margin-bottom: 20px;" data-i18n="modal-message">Certains champs obligatoires ne sont pas remplis. Voulez-vous utiliser les valeurs par défaut ?</p>
+            <div class="modal-buttons">
+                <button class="btn" id="use-defaults-btn" data-i18n="use-defaults">Utiliser les valeurs par défaut</button>
+                <button class="btn secondary" id="cancel-generate-btn" data-i18n="cancel">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Page Questionnaire -->
+        <div id="questionnaire-page">
+            <header class="header">
+                <h1 class="title" data-i18n="title">FITNESSGEN</h1>
+                <p class="subtitle" data-i18n="subtitle">Générateur Intelligent de Programmes Fitness</p>
+            </header>
+
+            <!-- Questionnaire -->
+            <div class="section">
+                <h2 class="section-title" data-i18n="questionnaire-title">🔍 Questionnaire Personnalisé</h2>
+
+                <div class="form-group">
+                    <label class="form-label" data-i18n="main-objective">🎯 Objectif principal :</label>
+                    <select class="form-select" id="objectif">
+                        <option value="" data-i18n="choose-objective">Choisissez votre objectif</option>
+                        <option value="perte-poids" data-i18n="weight-loss">Perte de poids</option>
+                        <option value="gain-muscle" data-i18n="muscle-gain">Gain musculaire</option>
+                        <option value="tonification" data-i18n="toning">Tonification</option>
+                        <option value="endurance" data-i18n="endurance">Amélioration de l'endurance</option>
+                        <option value="force" data-i18n="strength">Développement de la force</option>
+                        <option value="general" data-i18n="general-fitness">Fitness général</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" data-i18n="weekly-sessions">📅 Nombre de séances par semaine :</label>
+                    <select class="form-select" id="seances-semaine">
+                        <option value="" data-i18n="choose-frequency">Choisissez la fréquence</option>
+                        <option value="2" data-i18n="sessions-2">2 séances</option>
+                        <option value="3" data-i18n="sessions-3">3 séances</option>
+                        <option value="4" data-i18n="sessions-4">4 séances</option>
+                        <option value="5" data-i18n="sessions-5">5 séances</option>
+                        <option value="6" data-i18n="sessions-6">6 séances</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" data-i18n="training-type">🏋️ Type d'entraînement préféré :</label>
+                    <select class="form-select" id="type-entrainement">
+                        <option value="" data-i18n="choose-type">Choisissez le type</option>
+                        <option value="groupe-musculaire" data-i18n="muscle-group">Par groupe musculaire (split)</option>
+                        <option value="fullbody" data-i18n="fullbody">Full Body (corps entier)</option>
+                        <option value="half-body" data-i18n="halfbody">Half Body (haut/bas)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" data-i18n="experience-level">💪 Niveau d'expérience :</label>
+                    <select class="form-select" id="niveau">
+                        <option value="" data-i18n="choose-level">Choisissez votre niveau</option>
+                        <option value="debutant" data-i18n="beginner">Débutant</option>
+                        <option value="intermediaire" data-i18n="intermediate">Intermédiaire</option>
+                        <option value="avance" data-i18n="advanced">Avancé</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" data-i18n="session-duration">⏱️ Durée des séances (minutes) :</label>
+                    <select class="form-select" id="duree-seance">
+                        <option value="" data-i18n="choose-duration">Choisissez la durée</option>
+                        <option value="30" data-i18n="duration-30">30 minutes</option>
+                        <option value="45" data-i18n="duration-45">45 minutes</option>
+                        <option value="60" data-i18n="duration-60">60 minutes</option>
+                        <option value="75" data-i18n="duration-75">75 minutes</option>
+                        <option value="90" data-i18n="duration-90">90 minutes</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" data-i18n="health-conditions">🏥 Pathologies ou antécédents (optionnel) :</label>
+                    <select class="form-select" id="pathologies" multiple>
+                        <option value="aucune" data-i18n="none">Aucune</option>
+                        <option value="dos" data-i18n="back-problems">Problèmes de dos</option>
+                        <option value="genoux" data-i18n="knee-problems">Problèmes de genoux</option>
+                        <option value="epaules" data-i18n="shoulder-problems">Problèmes d'épaules</option>
+                        <option value="poignets" data-i18n="wrist-problems">Problèmes de poignets</option>
+                        <option value="hanches" data-i18n="hip-problems">Problèmes de hanches</option>
+                        <option value="cardiaque" data-i18n="heart-problems">Problèmes cardiaques</option>
+                        <option value="diabete" data-i18n="diabetes">Diabète</option>
+                        <option value="arthrose" data-i18n="arthritis">Arthrose</option>
+                    </select>
+                    <small style="color: #cccccc; font-size: 0.8rem;" data-i18n="multiple-selection">Maintenez Ctrl pour sélectionner plusieurs options</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label collapsible-label" id="exercise-toggle" data-i18n="custom-exercises">
+                        ✅ Exercices personnalisés (optionnel) <span class="arrow">▼</span>
+                    </label>
+                    <div class="exercise-selector" id="exercise-selector">
+                        <div class="exercise-column">
+                            <h4 data-i18n="wanted-exercises">Exercices souhaités</h4>
+                            <div class="exercise-list" id="wanted-exercises">
+                                <!-- Les exercices seront ajoutés dynamiquement -->
+                            </div>
+                        </div>
+                        <div class="exercise-column">
+                            <h4 data-i18n="avoided-exercises">Exercices à éviter</h4>
+                            <div class="exercise-list" id="avoided-exercises">
+                                <!-- Les exercices seront ajoutés dynamiquement -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn generate-btn" id="generate-program" data-i18n="generate-program">🚀 Générer le Programme</button>
+
+                <!-- Bouton retour au programme (caché par défaut) -->
+                <button class="btn secondary generate-btn" id="back-to-program" style="display: none;" data-i18n="back-to-program">🔄 Retour au Programme</button>
+            </div>
+        </div>
+
+        <!-- Page Programme -->
+        <div id="program-page" style="display: none;">
+            <header class="header">
+                <h1 class="title" data-i18n="your-program">VOTRE PROGRAMME</h1>
+                <p class="subtitle" data-i18n="generated-program">Programme Fitness Personnalisé Généré</p>
+            </header>
+
+            <div class="program-display">
+                <div id="program-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class FitnessGenerator {
+            constructor() {
+                this.currentColor = '#ffffff';
+                this.currentLanguage = 'fr';
+
+                // Dictionnaire de traductions
+                this.translations = {
+                    fr: {
+                        'title': 'FITNESSGEN',
+                        'subtitle': 'Générateur Intelligent de Programmes Fitness',
+                        'questionnaire-title': '🔍 Questionnaire Personnalisé',
+                        'main-objective': '🎯 Objectif principal :',
+                        'choose-objective': 'Choisissez votre objectif',
+                        'weight-loss': 'Perte de poids',
+                        'muscle-gain': 'Gain musculaire',
+                        'toning': 'Tonification',
+                        'endurance': 'Amélioration de l\'endurance',
+                        'strength': 'Développement de la force',
+                        'general-fitness': 'Fitness général',
+                        'weekly-sessions': '📅 Nombre de séances par semaine :',
+                        'choose-frequency': 'Choisissez la fréquence',
+                        'training-type': '🏋️ Type d\'entraînement préféré :',
+                        'choose-type': 'Choisissez le type',
+                        'muscle-group': 'Par groupe musculaire (split)',
+                        'fullbody': 'Full Body (corps entier)',
+                        'halfbody': 'Half Body (haut/bas)',
+                        'experience-level': '💪 Niveau d\'expérience :',
+                        'choose-level': 'Choisissez votre niveau',
+                        'beginner': 'Débutant',
+                        'intermediate': 'Intermédiaire',
+                        'advanced': 'Avancé',
+                        'session-duration': '⏱️ Durée des séances (minutes) :',
+                        'choose-duration': 'Choisissez la durée',
+                        'duration-30': '30 minutes',
+                        'duration-45': '45 minutes',
+                        'duration-60': '60 minutes',
+                        'duration-75': '75 minutes',
+                        'duration-90': '90 minutes',
+                        'sessions-2': '2 séances',
+                        'sessions-3': '3 séances',
+                        'sessions-4': '4 séances',
+                        'sessions-5': '5 séances',
+                        'sessions-6': '6 séances',
+                        'health-conditions': '🏥 Pathologies ou antécédents (optionnel) :',
+                        'none': 'Aucune',
+                        'back-problems': 'Problèmes de dos',
+                        'knee-problems': 'Problèmes de genoux',
+                        'shoulder-problems': 'Problèmes d\'épaules',
+                        'wrist-problems': 'Problèmes de poignets',
+                        'hip-problems': 'Problèmes de hanches',
+                        'heart-problems': 'Problèmes cardiaques',
+                        'diabetes': 'Diabète',
+                        'arthritis': 'Arthrose',
+                        'multiple-selection': 'Maintenez Ctrl pour sélectionner plusieurs options',
+                        'custom-exercises': '✅ Exercices personnalisés (optionnel)',
+                        'wanted-exercises': 'Exercices souhaités',
+                        'avoided-exercises': 'Exercices à éviter',
+                        'generate-program': '🚀 Générer le Programme',
+                        'back-to-program': '🔄 Retour au Programme',
+                        'your-program': 'VOTRE PROGRAMME',
+                        'generated-program': 'Programme Fitness Personnalisé Généré',
+                        'language': 'Langue / Language:',
+                        'auto-detect': 'Détection automatique',
+                        'english': 'English',
+                        'german': 'Deutsch',
+                        'spanish': 'Español',
+                        'french': 'Français',
+                        'border-color': 'Couleur des cases / Border Color:',
+                        'download-pdf': '📄 Télécharger en PDF / Download PDF',
+                        'modal-warning': '⚠️ Champs obligatoires manquants',
+                        'modal-message': 'Certains champs obligatoires ne sont pas remplis. Voulez-vous utiliser les valeurs par défaut ?',
+                        'use-defaults': 'Utiliser les valeurs par défaut',
+                        'cancel': 'Annuler',
+                        'program-summary-title': '📊 Résumé du programme',
+                        'objective-label': 'Objectif:',
+                        'program-objective': 'Objectif',
+                        'sessions-label': 'Séances par semaine:',
+                        'program-sessions': 'Séances par semaine',
+                        'training-type-label': 'Type d\'entraînement:',
+                        'program-type': 'Type d\'entraînement',
+                        'level-label': 'Niveau:',
+                        'program-level': 'Niveau',
+                        'duration-label': 'Durée des séances:',
+                        'program-duration': 'Durée des séances',
+                        'minutes-unit': 'minutes',
+                        'no-exercises': 'Aucun exercice disponible',
+                        'mandatory-fields-title': '⚠️ Champs obligatoires manquants',
+                        'mandatory-fields-message': 'Veuillez sélectionner un objectif et un niveau d\'expérience avant de générer votre programme.',
+                        'understood': 'Compris',
+                        'series': 'Séries',
+                        'repetitions': 'Répétitions',
+                        'rest': 'Repos',
+                        'generate-program-first': 'Générez d\'abord un programme'
+                    },
+                    en: {
+                        'title': 'FITNESSGEN',
+                        'subtitle': 'Intelligent Fitness Program Generator',
+                        'questionnaire-title': '🔍 Personalized Questionnaire',
+                        'main-objective': '🎯 Main objective:',
+                        'choose-objective': 'Choose your objective',
+                        'weight-loss': 'Weight loss',
+                        'muscle-gain': 'Muscle gain',
+                        'toning': 'Toning',
+                        'endurance': 'Endurance improvement',
+                        'strength': 'Strength development',
+                        'general-fitness': 'General fitness',
+                        'weekly-sessions': '📅 Number of sessions per week:',
+                        'choose-frequency': 'Choose frequency',
+                        'training-type': '🏋️ Preferred training type:',
+                        'choose-type': 'Choose type',
+                        'muscle-group': 'By muscle group (split)',
+                        'fullbody': 'Full Body (whole body)',
+                        'halfbody': 'Half Body (upper/lower)',
+                        'experience-level': '💪 Experience level:',
+                        'choose-level': 'Choose your level',
+                        'beginner': 'Beginner',
+                        'intermediate': 'Intermediate',
+                        'advanced': 'Advanced',
+                        'session-duration': '⏱️ Session duration (minutes):',
+                        'choose-duration': 'Choose duration',
+                        'duration-30': '30 minutes',
+                        'duration-45': '45 minutes',
+                        'duration-60': '60 minutes',
+                        'duration-75': '75 minutes',
+                        'duration-90': '90 minutes',
+                        'sessions-2': '2 sessions',
+                        'sessions-3': '3 sessions',
+                        'sessions-4': '4 sessions',
+                        'sessions-5': '5 sessions',
+                        'sessions-6': '6 sessions',
+                        'health-conditions': '🏥 Health conditions (optional):',
+                        'none': 'None',
+                        'back-problems': 'Back problems',
+                        'knee-problems': 'Knee problems',
+                        'shoulder-problems': 'Shoulder problems',
+                        'wrist-problems': 'Wrist problems',
+                        'hip-problems': 'Hip problems',
+                        'heart-problems': 'Heart problems',
+                        'diabetes': 'Diabetes',
+                        'arthritis': 'Arthritis',
+                        'multiple-selection': 'Hold Ctrl to select multiple options',
+                        'custom-exercises': '✅ Custom exercises (optional)',
+                        'wanted-exercises': 'Wanted exercises',
+                        'avoided-exercises': 'Exercises to avoid',
+                        'generate-program': '🚀 Generate Program',
+                        'back-to-program': '🔄 Back to Program',
+                        'your-program': 'YOUR PROGRAM',
+                        'generated-program': 'Generated Personalized Fitness Program',
+                        'language': 'Language:',
+                        'auto-detect': 'Auto-detect',
+                        'english': 'English',
+                        'german': 'Deutsch',
+                        'spanish': 'Español',
+                        'french': 'Français',
+                        'border-color': 'Border Color:',
+                        'download-pdf': '📄 Download PDF',
+                        'modal-warning': '⚠️ Required fields missing',
+                        'modal-message': 'Some required fields are not filled. Would you like to use default values?',
+                        'use-defaults': 'Use default values',
+                        'cancel': 'Cancel',
+                        'program-summary-title': '📊 Program Summary',
+                        'objective-label': 'Objective:',
+                        'program-objective': 'Objective',
+                        'sessions-label': 'Sessions per week:',
+                        'program-sessions': 'Sessions per week',
+                        'training-type-label': 'Training type:',
+                        'program-type': 'Training type',
+                        'level-label': 'Level:',
+                        'program-level': 'Level',
+                        'duration-label': 'Session duration:',
+                        'program-duration': 'Session duration',
+                        'minutes-unit': 'minutes',
+                        'no-exercises': 'No exercises available',
+                        'mandatory-fields-title': '⚠️ Required fields missing',
+                        'mandatory-fields-message': 'Please select an objective and experience level before generating your program.',
+                        'understood': 'Understood',
+                        'series': 'Series',
+                        'repetitions': 'Repetitions',
+                        'rest': 'Rest',
+                        'generate-program-first': 'Generate a program first'
+                    },
+                    de: {
+                        'title': 'FITNESSGEN',
+                        'subtitle': 'Intelligenter Fitness-Programm-Generator',
+                        'questionnaire-title': '🔍 Personalisierter Fragebogen',
+                        'main-objective': '🎯 Hauptziel:',
+                        'choose-objective': 'Wählen Sie Ihr Ziel',
+                        'weight-loss': 'Gewichtsverlust',
+                        'muscle-gain': 'Muskelaufbau',
+                        'toning': 'Straffung',
+                        'endurance': 'Ausdauer verbessern',
+                        'strength': 'Kraftentwicklung',
+                        'general-fitness': 'Allgemeines Fitness',
+                        'weekly-sessions': '📅 Anzahl der Trainingseinheiten pro Woche:',
+                        'choose-frequency': 'Häufigkeit wählen',
+                        'training-type': '🏋️ Bevorzugter Trainingstyp:',
+                        'choose-type': 'Typ wählen',
+                        'muscle-group': 'Nach Muskelgruppe (Split)',
+                        'fullbody': 'Full Body (ganzer Körper)',
+                        'halfbody': 'Half Body (oben/unten)',
+                        'experience-level': '💪 Erfahrungslevel:',
+                        'choose-level': 'Wählen Sie Ihr Level',
+                        'beginner': 'Anfänger',
+                        'intermediate': 'Fortgeschritten',
+                        'advanced': 'Profi',
+                        'session-duration': '⏱️ Trainingsdauer (Minuten):',
+                        'choose-duration': 'Dauer wählen',
+                        'duration-30': '30 Minuten',
+                        'duration-45': '45 Minuten',
+                        'duration-60': '60 Minuten',
+                        'duration-75': '75 Minuten',
+                        'duration-90': '90 Minuten',
+                        'sessions-2': '2 Trainingseinheiten',
+                        'sessions-3': '3 Trainingseinheiten',
+                        'sessions-4': '4 Trainingseinheiten',
+                        'sessions-5': '5 Trainingseinheiten',
+                        'sessions-6': '6 Trainingseinheiten',
+                        'health-conditions': '🏥 Gesundheitszustände (optional):',
+                        'none': 'Keine',
+                        'back-problems': 'Rückenprobleme',
+                        'knee-problems': 'Knieprobleme',
+                        'shoulder-problems': 'Schulterprobleme',
+                        'wrist-problems': 'Handgelenksprobleme',
+                        'hip-problems': 'Hüftprobleme',
+                        'heart-problems': 'Herzprobleme',
+                        'diabetes': 'Diabetes',
+                        'arthritis': 'Arthritis',
+                        'multiple-selection': 'Strg gedrückt halten für Mehrfachauswahl',
+                        'custom-exercises': '✅ Benutzerdefinierte Übungen (optional)',
+                        'wanted-exercises': 'Gewünschte Übungen',
+                        'avoided-exercises': 'Zu vermeidende Übungen',
+                        'generate-program': '🚀 Programm generieren',
+                        'back-to-program': '🔄 Zurück zum Programm',
+                        'your-program': 'IHR PROGRAMM',
+                        'generated-program': 'Generiertes personalisiertes Fitness-Programm',
+                        'language': 'Sprache:',
+                        'auto-detect': 'Automatische Erkennung',
+                        'english': 'English',
+                        'german': 'Deutsch',
+                        'spanish': 'Español',
+                        'french': 'Français',
+                        'border-color': 'Rahmenfarbe:',
+                        'download-pdf': '📄 PDF herunterladen',
+                        'modal-warning': '⚠️ Erforderliche Felder fehlen',
+                        'modal-message': 'Einige erforderliche Felder sind nicht ausgefüllt. Möchten Sie Standardwerte verwenden?',
+                        'use-defaults': 'Standardwerte verwenden',
+                        'cancel': 'Abbrechen',
+                        'program-summary-title': '📊 Programm-Zusammenfassung',
+                        'objective-label': 'Ziel:',
+                        'program-objective': 'Ziel',
+                        'sessions-label': 'Trainingseinheiten pro Woche:',
+                        'program-sessions': 'Trainingseinheiten pro Woche',
+                        'training-type-label': 'Trainingstyp:',
+                        'program-type': 'Trainingstyp',
+                        'level-label': 'Level:',
+                        'program-level': 'Level',
+                        'duration-label': 'Trainingsdauer:',
+                        'program-duration': 'Trainingsdauer',
+                        'minutes-unit': 'Minuten',
+                        'no-exercises': 'Keine Übungen verfügbar',
+                        'mandatory-fields-title': '⚠️ Erforderliche Felder fehlen',
+                        'mandatory-fields-message': 'Bitte wählen Sie ein Ziel und ein Erfahrungslevel, bevor Sie Ihr Programm generieren.',
+                        'understood': 'Verstanden',
+                        'series': 'Sätze',
+                        'repetitions': 'Wiederholungen',
+                        'rest': 'Pause',
+                        'generate-program-first': 'Generieren Sie zuerst ein Programm'
+                    },
+                    es: {
+                        'title': 'FITNESSGEN',
+                        'subtitle': 'Generador Inteligente de Programas de Fitness',
+                        'questionnaire-title': '🔍 Cuestionario Personalizado',
+                        'main-objective': '🎯 Objetivo principal:',
+                        'choose-objective': 'Elija su objetivo',
+                        'weight-loss': 'Pérdida de peso',
+                        'muscle-gain': 'Ganancia muscular',
+                        'toning': 'Tonificación',
+                        'endurance': 'Mejora de la resistencia',
+                        'strength': 'Desarrollo de fuerza',
+                        'general-fitness': 'Fitness general',
+                        'weekly-sessions': '📅 Número de sesiones por semana:',
+                        'choose-frequency': 'Elija la frecuencia',
+                        'training-type': '🏋️ Tipo de entrenamiento preferido:',
+                        'choose-type': 'Elija el tipo',
+                        'muscle-group': 'Por grupo muscular (split)',
+                        'fullbody': 'Full Body (cuerpo completo)',
+                        'halfbody': 'Half Body (arriba/abajo)',
+                        'experience-level': '💪 Nivel de experiencia:',
+                        'choose-level': 'Elija su nivel',
+                        'beginner': 'Principiante',
+                        'intermediate': 'Intermedio',
+                        'advanced': 'Avanzado',
+                        'session-duration': '⏱️ Duración de las sesiones (minutos):',
+                        'choose-duration': 'Elija la duración',
+                        'duration-30': '30 minutos',
+                        'duration-45': '45 minutos',
+                        'duration-60': '60 minutos',
+                        'duration-75': '75 minutos',
+                        'duration-90': '90 minutos',
+                        'sessions-2': '2 sesiones',
+                        'sessions-3': '3 sesiones',
+                        'sessions-4': '4 sesiones',
+                        'sessions-5': '5 sesiones',
+                        'sessions-6': '6 sesiones',
+                        'health-conditions': '🏥 Condiciones de salud (opcional):',
+                        'none': 'Ninguna',
+                        'back-problems': 'Problemas de espalda',
+                        'knee-problems': 'Problemas de rodillas',
+                        'shoulder-problems': 'Problemas de hombros',
+                        'wrist-problems': 'Problemas de muñecas',
+                        'hip-problems': 'Problemas de caderas',
+                        'heart-problems': 'Problemas cardíacos',
+                        'diabetes': 'Diabetes',
+                        'arthritis': 'Artritis',
+                        'multiple-selection': 'Mantenga Ctrl para seleccionar múltiples opciones',
+                        'custom-exercises': '✅ Ejercicios personalizados (opcional)',
+                        'wanted-exercises': 'Ejercicios deseados',
+                        'avoided-exercises': 'Ejercicios a evitar',
+                        'generate-program': '🚀 Generar Programa',
+                        'back-to-program': '🔄 Volver al Programa',
+                        'your-program': 'SU PROGRAMA',
+                        'generated-program': 'Programa de Fitness Personalizado Generado',
+                        'language': 'Idioma:',
+                        'auto-detect': 'Detección automática',
+                        'english': 'English',
+                        'german': 'Deutsch',
+                        'spanish': 'Español',
+                        'french': 'Français',
+                        'border-color': 'Color del borde:',
+                        'download-pdf': '📄 Descargar PDF',
+                        'modal-warning': '⚠️ Faltan campos obligatorios',
+                        'modal-message': 'Algunos campos obligatorios no están llenos. ¿Desea usar valores predeterminados?',
+                        'use-defaults': 'Usar valores predeterminados',
+                        'cancel': 'Cancelar',
+                        'program-summary-title': '📊 Resumen del programa',
+                        'objective-label': 'Objetivo:',
+                        'program-objective': 'Objetivo',
+                        'sessions-label': 'Sesiones por semana:',
+                        'program-sessions': 'Sesiones por semana',
+                        'training-type-label': 'Tipo de entrenamiento:',
+                        'program-type': 'Tipo de entrenamiento',
+                        'level-label': 'Nivel:',
+                        'program-level': 'Nivel',
+                        'duration-label': 'Duración de las sesiones:',
+                        'program-duration': 'Duración de las sesiones',
+                        'minutes-unit': 'minutos',
+                        'no-exercises': 'No hay ejercicios disponibles',
+                        'mandatory-fields-title': '⚠️ Faltan campos obligatorios',
+                        'mandatory-fields-message': 'Por favor seleccione un objetivo y un nivel de experiencia antes de generar su programa.',
+                        'understood': 'Entendido',
+                        'series': 'Series',
+                        'repetitions': 'Repeticiones',
+                        'rest': 'Descanso',
+                        'generate-program-first': 'Genere primero un programa'
+                    }
+                };
+
+                this.initializeElements();
+                this.bindEvents();
+                this.detectLanguage();
+                this.applyTranslation();
+                this.createParticles();
+                this.loadExercises();
+                this.setupDayColors();
+            }
+
+            initializeElements() {
+                // Pages
+                this.questionnairePage = document.getElementById('questionnaire-page');
+                this.programPage = document.getElementById('program-page');
+                this.backButton = document.getElementById('back-button');
+
+                // Formulaire
+                this.objectifSelect = document.getElementById('objectif');
+                this.seancesSelect = document.getElementById('seances-semaine');
+                this.typeSelect = document.getElementById('type-entrainement');
+                this.niveauSelect = document.getElementById('niveau');
+                this.dureeSelect = document.getElementById('duree-seance');
+                this.pathologiesSelect = document.getElementById('pathologies');
+                this.generateBtn = document.getElementById('generate-program');
+
+                // Affichage programme
+                this.programDisplay = document.getElementById('program-display');
+                this.programContent = document.getElementById('program-content');
+                this.downloadBtn = document.getElementById('download-pdf');
+
+                // Options et personnalisation
+                this.optionsToggle = document.getElementById('options-toggle');
+                this.optionsContent = document.getElementById('options-content');
+                this.languageSelect = document.getElementById('language-select');
+                this.colorOptions = document.querySelectorAll('.color-option');
+                this.wantedExercises = document.getElementById('wanted-exercises');
+                this.avoidedExercises = document.getElementById('avoided-exercises');
+                this.exerciseToggle = document.getElementById('exercise-toggle');
+                this.exerciseSelector = document.getElementById('exercise-selector');
+
+                // Modal
+                this.missingFieldsModal = document.getElementById('missing-fields-modal');
+                this.useDefaultsBtn = document.getElementById('use-defaults-btn');
+                this.cancelGenerateBtn = document.getElementById('cancel-generate-btn');
+
+                // Bouton retour au programme
+                this.backToProgramBtn = document.getElementById('back-to-program');
+
+                // État
+                this.programGenerated = false;
+                this.lastProgram = null;
+            }
+
+            bindEvents() {
+                this.generateBtn.addEventListener('click', () => this.generateProgram());
+                this.downloadBtn.addEventListener('click', () => this.downloadPDF());
+                this.backButton.addEventListener('click', () => this.showQuestionnaire());
+                this.backToProgramBtn.addEventListener('click', () => this.showProgram());
+                this.exerciseToggle.addEventListener('click', () => this.toggleExerciseSelector());
+                this.languageSelect.addEventListener('change', (e) => this.changeLanguage(e.target.value));
+                this.colorOptions.forEach(option => {
+                    option.addEventListener('click', (e) => this.changeColor(e.target.dataset.color));
+                });
+
+                // Modal events
+                this.useDefaultsBtn.addEventListener('click', () => this.useDefaultValues());
+                this.cancelGenerateBtn.addEventListener('click', () => this.hideModal());
+            }
+
+            setupDayColors() {
+                this.dayColors = [
+                    { light: '#FF6B6B', dark: '#CC5555' }, // Rouge
+                    { light: '#4ECDC4', dark: '#3EA39A' }, // Turquoise
+                    { light: '#45B7D1', dark: '#3894AA' }, // Bleu
+                    { light: '#96CEB4', dark: '#78A890' }, // Vert
+                    { light: '#FFEAA7', dark: '#CCBB88' }, // Jaune
+                    { light: '#DDA0DD', dark: '#B380B3' }, // Violet
+                    { light: '#FFB6C1', dark: '#CC9499' }, // Rose
+                    { light: '#98D8C8', dark: '#7AB3A7' }, // Vert d'eau
+                    { light: '#F7DC6F', dark: '#C9B458' }, // Or
+                    { light: '#BB8FCE', dark: '#9B6BA8' }  // Lavande
+                ];
+            }
+
+            detectLanguage() {
+                // Détection automatique basée sur la langue du navigateur
+                const browserLang = navigator.language || navigator.userLanguage;
+
+                // Mapping des langues du navigateur vers nos langues supportées
+                const langMap = {
+                    'fr': 'fr',
+                    'fr-FR': 'fr',
+                    'fr-BE': 'fr',
+                    'fr-CA': 'fr',
+                    'fr-CH': 'fr',
+                    'en': 'en',
+                    'en-US': 'en',
+                    'en-GB': 'en',
+                    'en-CA': 'en',
+                    'de': 'de',
+                    'de-DE': 'de',
+                    'de-AT': 'de',
+                    'de-CH': 'de',
+                    'es': 'es',
+                    'es-ES': 'es',
+                    'es-MX': 'es',
+                    'es-AR': 'es',
+                    'es-CO': 'es'
+                };
+
+                // Déterminer la langue appropriée
+                this.currentLanguage = langMap[browserLang] || 'fr'; // Français par défaut
+
+                // Mettre à jour le sélecteur de langue
+                this.languageSelect.value = 'auto';
+            }
+
+            changeLanguage(language) {
+                if (language === 'auto') {
+                    this.detectLanguage();
+                } else {
+                    this.currentLanguage = language;
+                }
+
+                // Sauvegarder la préférence utilisateur (si pas auto)
+                if (language !== 'auto') {
+                    localStorage.setItem('fitnessgen-language', language);
+                } else {
+                    localStorage.removeItem('fitnessgen-language');
+                }
+
+                this.applyTranslation();
+
+                // Régénérer les sélecteurs d'exercices et le programme si nécessaire
+                this.renderExerciseSelectors();
+                if (this.currentProgram && this.programGenerated) {
+                    this.displayProgram(this.currentProgram);
+                }
+            }
+
+            applyTranslation() {
+                const translations = this.translations[this.currentLanguage];
+
+                if (!translations) return;
+
+                // Appliquer les traductions à tous les éléments avec data-i18n
+                document.querySelectorAll('[data-i18n]').forEach(element => {
+                    const key = element.dataset.i18n;
+                    if (translations[key]) {
+                        if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+                            element.placeholder = translations[key];
+                        } else if (element.tagName === 'OPTION') {
+                            element.textContent = translations[key];
+                        } else {
+                            // Pour les éléments du résumé qui ont du contenu dynamique
+                            if (element.hasAttribute('data-dynamic-content')) {
+                                // Garder le contenu existant mais traduire les labels
+                                const originalContent = element.getAttribute('data-original-content');
+                                if (originalContent) {
+                                    // Le contenu original contient déjà les traductions, on ne fait rien
+                                }
+                            } else {
+                                element.textContent = translations[key];
+                            }
+                        }
+                    }
+                });
+
+                // Traductions spéciales pour les éléments sans data-i18n ou avec logique spéciale
+                this.backButton.textContent = this.currentLanguage === 'fr' ? '← Retour au questionnaire' :
+                                           this.currentLanguage === 'en' ? '← Back to questionnaire' :
+                                           this.currentLanguage === 'de' ? '← Zurück zum Fragebogen' :
+                                           '← Volver al cuestionario';
+
+                // Mettre à jour le titre de la page selon la langue
+                document.title = translations['title'] + ' - ' + translations['subtitle'];
+
+                // Appliquer les traductions aux éléments du résumé du programme
+                this.applyProgramSummaryTranslations();
+            }
+
+            applyProgramSummaryTranslations() {
+                const translations = this.translations[this.currentLanguage];
+                if (!translations) return;
+
+                // Traduire les éléments du résumé du programme
+                const summaryContainer = document.querySelector('[data-i18n-container="program-summary"]');
+                if (summaryContainer) {
+                    // Les labels (strong elements)
+                    const labels = summaryContainer.querySelectorAll('strong[data-i18n]');
+                    labels.forEach(label => {
+                        const key = label.dataset.i18n;
+                        if (translations[key]) {
+                            label.textContent = translations[key];
+                        }
+                    });
+
+                    // Les unités (minutes)
+                    const units = summaryContainer.querySelectorAll('[data-i18n]');
+                    units.forEach(unit => {
+                        const key = unit.dataset.i18n;
+                        if (translations[key]) {
+                            unit.textContent = translations[key];
+                        }
+                    });
+                }
+            }
+
+
+            toggleExerciseSelector() {
+                const isVisible = this.exerciseSelector.style.display !== 'none';
+                this.exerciseSelector.style.display = isVisible ? 'none' : 'grid';
+                const arrow = this.exerciseToggle.querySelector('.arrow');
+                arrow.style.transform = isVisible ? 'rotate(0deg)' : 'rotate(180deg)';
+            }
+
+            showQuestionnaire() {
+                this.questionnairePage.style.display = 'block';
+                this.programPage.style.display = 'none';
+                this.backButton.style.display = 'none';
+            }
+
+            showProgram() {
+                this.questionnairePage.style.display = 'none';
+                this.programPage.style.display = 'block';
+                this.backButton.style.display = 'block';
+                // Appliquer la traduction à la page programme aussi
+                this.applyTranslation();
+            }
+
+            changeColor(color) {
+                this.currentColor = color;
+                document.documentElement.style.setProperty('--border-color', color);
+                document.querySelectorAll('.section, .workout-day, .exercise, .form-select, .form-input').forEach(el => {
+                    el.style.borderColor = color;
+                });
+                // Appliquer aussi aux éléments du questionnaire
+                document.querySelectorAll('.form-group, .options-panel').forEach(el => {
+                    el.style.borderColor = color;
+                });
+            }
+
+            loadExercises() {
+                // Utiliser la base de données externe des exercices
+                this.exercises = ExercisesDatabase.data;
+                this.renderExerciseSelectors();
+            }
+
+            renderExerciseSelectors() {
+                let wantedHtml = '';
+                let avoidedHtml = '';
+
+                Object.keys(this.exercises).forEach(group => {
+                    this.exercises[group].forEach(exercise => {
+                        const exerciseName = ExercisesDatabase.getExerciseName(exercise, this.currentLanguage);
+                        const exerciseId = `${group}-${exercise.key.replace(/\s+/g, '-').toLowerCase()}`;
+                        wantedHtml += `
+                            <div class="exercise-item">
+                                <input type="checkbox" class="exercise-checkbox" id="wanted-${exerciseId}" data-exercise="${exercise.key}" data-group="${group}">
+                                <label for="wanted-${exerciseId}">${exerciseName}</label>
+                            </div>
+                        `;
+                        avoidedHtml += `
+                            <div class="exercise-item">
+                                <input type="checkbox" class="exercise-checkbox" id="avoided-${exerciseId}" data-exercise="${exercise.key}" data-group="${group}">
+                                <label for="avoided-${exerciseId}">${exerciseName}</label>
+                            </div>
+                        `;
+                    });
+                });
+
+                this.wantedExercises.innerHTML = wantedHtml;
+                this.avoidedExercises.innerHTML = avoidedHtml;
+            }
+
+            generateProgram() {
+                // Récupération des valeurs du formulaire
+                let objectif = this.objectifSelect.value;
+                let seances = this.seancesSelect.value;
+                let type = this.typeSelect.value;
+                let niveau = this.niveauSelect.value;
+                let duree = this.dureeSelect.value;
+
+                // Vérification des champs obligatoires (objectif et niveau)
+                const mandatoryFields = [objectif, niveau];
+                const missingMandatory = mandatoryFields.filter(field => !field);
+
+                if (missingMandatory.length > 0) {
+                    this.showMandatoryFieldsAlert();
+                    return;
+                }
+
+                // Appliquer les valeurs par défaut pour les champs optionnels si nécessaire
+                const finalSeances = seances || '3';
+                const finalType = type || 'fullbody';
+                const finalDuree = duree || '60';
+
+                // Si des champs optionnels sont manquants, demander confirmation pour valeurs par défaut
+                const optionalFields = [seances, type, duree];
+                const missingOptional = optionalFields.filter(field => !field);
+
+                if (missingOptional.length > 0) {
+                    this.showModal();
+                    return;
+                }
+
+                // Tous les champs sont remplis, procéder à la génération
+                this.generateProgramWithValues(objectif, finalSeances, finalType, niveau, finalDuree);
+            }
+
+            generateProgramWithValues(objectif, seances, type, niveau, duree) {
+                // Récupération des autres valeurs
+                const pathologies = Array.from(this.pathologiesSelect.selectedOptions).map(opt => opt.value);
+                const wantedExercises = Array.from(document.querySelectorAll('#wanted-exercises input:checked')).map(cb => ({
+                    key: cb.dataset.exercise,
+                    group: cb.dataset.group
+                }));
+                const avoidedExercises = Array.from(document.querySelectorAll('#avoided-exercises input:checked')).map(cb => cb.dataset.exercise);
+
+                // Création et affichage du programme
+                const program = this.createProgram(objectif, parseInt(seances), type, niveau, parseInt(duree), pathologies, wantedExercises, avoidedExercises);
+                this.displayProgram(program);
+                this.showProgram();
+
+                // Sauvegarder le programme et afficher le bouton retour
+                this.lastProgram = program;
+                this.programGenerated = true;
+                this.backToProgramBtn.style.display = 'block';
+            }
+
+            showModal() {
+                this.missingFieldsModal.style.display = 'flex';
+            }
+
+            hideModal() {
+                this.missingFieldsModal.style.display = 'none';
+            }
+
+            showMandatoryFieldsAlert() {
+                // Créer une modal d'alerte pour les champs obligatoires
+                const alertModal = document.createElement('div');
+                alertModal.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.8);
+                    z-index: 2000;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                `;
+
+                alertModal.innerHTML = `
+                    <div style="
+                        background: rgba(0, 0, 0, 0.9);
+                        border: 2px solid #ff6b6b;
+                        border-radius: 15px;
+                        padding: 30px;
+                        max-width: 500px;
+                        text-align: center;
+                        color: #ffffff;
+                    ">
+                        <h3 style="color: #ff6b6b; margin-bottom: 15px;" data-i18n="mandatory-fields-title">⚠️ Champs obligatoires manquants</h3>
+                        <p style="margin-bottom: 20px;" data-i18n="mandatory-fields-message">Veuillez sélectionner un objectif et un niveau d'expérience avant de générer votre programme.</p>
+                        <button style="
+                            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+                            border: none;
+                            color: #000000;
+                            padding: 12px 25px;
+                            border-radius: 25px;
+                            cursor: pointer;
+                            font-weight: bold;
+                        " onclick="this.parentElement.parentElement.remove()" data-i18n="understood">Compris</button>
+                    </div>
+                `;
+
+                document.body.appendChild(alertModal);
+
+                // Appliquer la traduction à la modal
+                this.applyTranslation();
+            }
+
+            useDefaultValues() {
+                // Récupérer les valeurs actuelles (obligatoires sont déjà remplies)
+                const objectif = this.objectifSelect.value;
+                const niveau = this.niveauSelect.value;
+
+                // Appliquer les valeurs par défaut pour les champs optionnels
+                const finalSeances = this.seancesSelect.value || '3';
+                const finalType = this.typeSelect.value || 'fullbody';
+                const finalDuree = this.dureeSelect.value || '60';
+
+                // Mettre à jour les champs du formulaire avec les valeurs par défaut
+                this.seancesSelect.value = finalSeances;
+                this.typeSelect.value = finalType;
+                this.dureeSelect.value = finalDuree;
+
+                this.hideModal();
+
+                // Générer le programme avec toutes les valeurs (obligatoires + valeurs par défaut)
+                this.generateProgramWithValues(objectif, finalSeances, finalType, niveau, finalDuree);
+            }
+
+            createProgram(objectif, seances, type, niveau, duree, pathologies, wanted, avoided) {
+                const program = {
+                    objectif: objectif,
+                    seancesParSemaine: seances,
+                    typeEntrainement: type,
+                    niveau: niveau,
+                    dureeSeance: duree,
+                    jours: []
+                };
+
+                // Copie des exercices disponibles
+                const availableExercises = JSON.parse(JSON.stringify(this.exercises));
+
+                // Filtrage selon les pathologies
+                if (pathologies.includes('dos')) {
+                    Object.keys(availableExercises).forEach(group => {
+                        availableExercises[group] = availableExercises[group].filter(ex => ex.difficulty !== 'Avancé');
+                    });
+                }
+
+                // Suppression des exercices à éviter
+                Object.keys(availableExercises).forEach(group => {
+                    availableExercises[group] = availableExercises[group].filter(ex =>
+                        !avoided.includes(ex.key)
+                    );
+                });
+
+                // Calculer le nombre d'exercices souhaité selon le niveau et la durée
+                const exercisesPerDay = this.getExercisesCountForLevel(niveau, duree);
+
+                // Génération du programme selon le type
+                for (let i = 0; i < seances; i++) {
+                    const jour = {
+                        nom: `Jour ${i + 1}`,
+                        exercices: []
+                    };
+
+                    // Ajout des exercices souhaités en priorité
+                    wanted.forEach(wantedEx => {
+                        if (availableExercises[wantedEx.group] && jour.exercices.length < exercisesPerDay) {
+                            const exercise = availableExercises[wantedEx.group].find(ex => ex.key === wantedEx.key);
+                            if (exercise) {
+                                jour.exercices.push({
+                                    key: exercise.key,
+                                    series: this.getSeriesForLevel(niveau, duree),
+                                    reps: this.getRepsForObjective(objectif),
+                                    repos: '90-120s'
+                                });
+                            }
+                        }
+                    });
+
+                    // Complément avec des exercices par défaut selon le type
+                    const groupsToUse = this.getGroupsForDay(type, i, seances);
+                    groupsToUse.forEach(group => {
+                        if (availableExercises[group] && jour.exercices.length < exercisesPerDay) {
+                            const exercisesForGroup = availableExercises[group].filter(ex =>
+                                !wanted.some(w => w.key === ex.key)
+                            );
+
+                            const remainingSlots = exercisesPerDay - jour.exercices.length;
+                            const numExercises = Math.min(remainingSlots, exercisesForGroup.length);
+                            for (let j = 0; j < numExercises; j++) {
+                                jour.exercices.push({
+                                    key: exercisesForGroup[j].key,
+                                    series: this.getSeriesForLevel(niveau, duree),
+                                    reps: this.getRepsForObjective(objectif),
+                                    repos: '60-90s'
+                                });
+                            }
+                        }
+                    });
+
+                    // Si aucun exercice n'a été ajouté, ajouter des exercices de base
+                    if (jour.exercices.length === 0) {
+                        jour.exercices.push({
+                            key: 'push-ups',
+                            series: this.getSeriesForLevel(niveau, duree),
+                            reps: this.getRepsForObjective(objectif),
+                            repos: '60s'
+                        });
+                    }
+
+                    program.jours.push(jour);
+                }
+
+                return program;
+            }
+
+            getGroupsForDay(type, dayIndex, totalDays) {
+                const allGroups = ['pectoraux', 'dos', 'jambes', 'epaules', 'bras'];
+
+                switch (type) {
+                    case 'groupe-musculaire':
+                        // Split classique : Push/Pull/Legs
+                        if (dayIndex % 3 === 0) return ['pectoraux', 'epaules']; // Push
+                        if (dayIndex % 3 === 1) return ['dos']; // Pull
+                        return ['jambes']; // Legs
+
+                    case 'half-body':
+                        // Haut/Bas alterné
+                        return dayIndex % 2 === 0 ? ['pectoraux', 'dos', 'epaules'] : ['jambes'];
+
+                    case 'fullbody':
+                    default:
+                        // Variation pour fullbody : sélectionner différents groupes selon le jour
+                        if (totalDays === 1) {
+                            // Pour une seule séance, utiliser tous les groupes
+                            return allGroups;
+                        } else if (totalDays === 2) {
+                            // Pour 2 séances : alterner les groupes
+                            return dayIndex % 2 === 0
+                                ? ['pectoraux', 'dos', 'epaules']  // Haut du corps
+                                : ['jambes', 'bras'];               // Bas du corps + bras
+                        } else if (totalDays === 3) {
+                            // Pour 3 séances : rotation des groupes
+                            const rotations = [
+                                ['pectoraux', 'dos'],           // Jour 1: Poitrine + Dos
+                                ['jambes', 'epaules'],          // Jour 2: Jambes + Épaules
+                                ['pectoraux', 'bras']           // Jour 3: Poitrine + Bras
+                            ];
+                            return rotations[dayIndex % 3];
+                        } else {
+                            // Pour 4+ séances : combinaisons variées
+                            const combinations = [
+                                ['pectoraux', 'dos'],           // Jour 1
+                                ['jambes', 'epaules'],          // Jour 2
+                                ['pectoraux', 'bras'],          // Jour 3
+                                ['dos', 'jambes'],              // Jour 4
+                                ['epaules', 'bras'],            // Jour 5
+                                ['pectoraux', 'jambes'],        // Jour 6
+                                ['dos', 'bras']                 // Jour 7
+                            ];
+                            return combinations[dayIndex % combinations.length];
+                        }
+                }
+            }
+
+            getSeriesForLevel(niveau, duree) {
+                // Adapter les séries selon le niveau ET la durée
+                const dureeMinutes = parseInt(duree);
+
+                switch (niveau) {
+                    case 'debutant':
+                        return dureeMinutes <= 45 ? '2' : '2-3';
+                    case 'intermediaire':
+                        return dureeMinutes <= 45 ? '3' : '3-4';
+                    case 'avance':
+                        return dureeMinutes <= 45 ? '4' : '4-5';
+                    default:
+                        return '3';
+                }
+            }
+
+            getExercisesCountForLevel(niveau, duree) {
+                // Adapter le nombre d'exercices selon le niveau ET la durée
+                const dureeMinutes = parseInt(duree);
+
+                switch (niveau) {
+                    case 'debutant':
+                        return dureeMinutes <= 45 ? 4 : dureeMinutes <= 60 ? 5 : 6;
+                    case 'intermediaire':
+                        return dureeMinutes <= 45 ? 5 : dureeMinutes <= 60 ? 6 : 7;
+                    case 'avance':
+                        return dureeMinutes <= 45 ? 6 : dureeMinutes <= 60 ? 7 : 8;
+                    default:
+                        return 5;
+                }
+            }
+
+            getRepsForObjective(objectif) {
+                switch (objectif) {
+                    case 'perte-poids': return '12-15';
+                    case 'gain-muscle': return '8-12';
+                    case 'tonification': return '10-15';
+                    case 'endurance': return '15-20';
+                    case 'force': return '4-6';
+                    default: return '10-12';
+                }
+            }
+
+            displayProgram(program) {
+                // Génération du résumé avec les vraies valeurs traduites
+                const translations = this.translations[this.currentLanguage];
+                const objectifText = this.getObjectifName(program.objectif);
+                const sessionsText = program.seancesParSemaine;
+                const typeText = this.getTypeName(program.typeEntrainement);
+                const levelText = this.getNiveauName(program.niveau);
+                const durationText = program.dureeSeance;
+
+                // Récupérer les traductions pour les détails d'exercice
+                const seriesLabel = translations['series'];
+                const repsLabel = translations['repetitions'];
+                const restLabel = translations['rest'];
+
+                let html = `
+                    <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 10px; margin-bottom: 30px;" data-i18n-container="program-summary">
+                        <h3 style="color: #4ecdc4; margin-bottom: 10px;" data-i18n="program-summary-title">📊 Résumé du programme</h3>
+                        <p><strong data-i18n="objective-label">Objectif:</strong> <span>${objectifText}</span></p>
+                        <p><strong data-i18n="sessions-label">Séances par semaine:</strong> <span>${sessionsText}</span></p>
+                        <p><strong data-i18n="training-type-label">Type d'entraînement:</strong> <span>${typeText}</span></p>
+                        <p><strong data-i18n="level-label">Niveau:</strong> <span>${levelText}</span></p>
+                        <p><strong data-i18n="duration-label">Durée des séances:</strong> <span>${durationText}</span> <span data-i18n="minutes-unit">minutes</span></p>
+                    </div>
+
+                    <div class="program-days">
+                `;
+
+                // Génération des jours d'entraînement
+                program.jours.forEach((jour, index) => {
+                    const colorIndex = index % this.dayColors.length;
+                    const colors = this.dayColors[colorIndex];
+
+                    // Traduire le nom du jour selon la langue actuelle
+                    const dayTranslations = {
+                        fr: `Jour ${index + 1}`,
+                        en: `Day ${index + 1}`,
+                        de: `Tag ${index + 1}`,
+                        es: `Día ${index + 1}`
+                    };
+                    const translatedDayName = dayTranslations[this.currentLanguage] || jour.nom;
+
+                    html += `
+                        <div class="workout-day day-card" data-day-index="${index}">
+                            <div class="day-header" style="--day-color: ${colors.light}; --day-color-dark: ${colors.dark}" data-day-title="${translatedDayName}">
+                                ${translatedDayName}
+                            </div>
+                            <div style="padding: 20px;" data-day-content="${index}">
+                    `;
+
+                    if (jour.exercices && jour.exercices.length > 0) {
+                        jour.exercices.forEach((exercice, exerciseIndex) => {
+                            // Trouver l'exercice dans la base de données pour obtenir le nom traduit
+                            let exerciseName = exercice.key; // Fallback
+                            Object.keys(this.exercises).forEach(group => {
+                                const found = this.exercises[group].find(ex => ex.key === exercice.key);
+                                if (found) {
+                                    exerciseName = ExercisesDatabase.getExerciseName(found, this.currentLanguage);
+                                }
+                            });
+
+                            html += `
+                                <div class="exercise" data-exercise-index="${exerciseIndex}">
+                                    <div class="exercise-name" data-exercise-name="${exerciseName}">${exerciseName}</div>
+                                    <div class="exercise-details" data-exercise-details="${seriesLabel}: ${exercice.series} | ${repsLabel}: ${exercice.reps} | ${restLabel}: ${exercice.repos}">
+                                        ${seriesLabel}: ${exercice.series} | ${repsLabel}: ${exercice.reps} | ${restLabel}: ${exercice.repos}
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        html += `<div class="exercise" data-no-exercises="true"><div class="exercise-name" style="color: #ff6b6b;" data-i18n="no-exercises">Aucun exercice disponible</div></div>`;
+                    }
+
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+
+                // Insertion dans le DOM
+                this.programContent.innerHTML = html;
+
+                // Sauvegarder les données du programme pour le PDF
+                this.currentProgram = program;
+
+                // Appliquer la traduction après l'insertion
+                this.applyTranslation();
+            }
+
+            getObjectifName(objectif) {
+                const translations = this.translations[this.currentLanguage];
+                const objectifKeys = {
+                    'perte-poids': 'weight-loss',
+                    'gain-muscle': 'muscle-gain',
+                    'tonification': 'toning',
+                    'endurance': 'endurance',
+                    'strength': 'strength',
+                    'general': 'general-fitness'
+                };
+                return translations[objectifKeys[objectif]] || objectif;
+            }
+
+            getTypeName(type) {
+                const translations = this.translations[this.currentLanguage];
+                const typeKeys = {
+                    'groupe-musculaire': 'muscle-group',
+                    'fullbody': 'fullbody',
+                    'half-body': 'halfbody'
+                };
+                return translations[typeKeys[type]] || type;
+            }
+
+            getNiveauName(niveau) {
+                const translations = this.translations[this.currentLanguage];
+                const niveauKeys = {
+                    'debutant': 'beginner',
+                    'intermediaire': 'intermediate',
+                    'avance': 'advanced'
+                };
+                return translations[niveauKeys[niveau]] || niveau;
+            }
+
+            hexToRgb(hex) {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? {
+                    r: parseInt(result[1], 16),
+                    g: parseInt(result[2], 16),
+                    b: parseInt(result[3], 16)
+                } : null;
+            }
+
+            downloadPDF() {
+                // Vérifier si un programme a été généré
+                if (!this.currentProgram || !this.programGenerated) {
+                    const pdfWarning = document.getElementById('pdf-warning');
+                    pdfWarning.style.display = 'block';
+                    setTimeout(() => {
+                        pdfWarning.style.display = 'none';
+                    }, 3000); // Masquer après 3 secondes
+                    return;
+                }
+
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                // Récupérer tous les éléments de la page programme
+                const summaryElement = this.programContent.querySelector('[data-i18n-container="program-summary"]');
+                const workoutDays = this.programContent.querySelectorAll('.workout-day');
+
+                // Page 1: Résumé du programme - même style que sur le web
+                if (summaryElement) {
+                    // Fond noir subtil comme sur le web
+                    doc.setFillColor(0, 0, 0);
+                    doc.rect(0, 0, 210, 297, 'F');
+
+                    // Titre principal avec effet dégradé (simulé)
+                    doc.setFontSize(28);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(255, 107, 107); // Rouge corail du gradient
+                    doc.text('FITNESSGEN', 105, 40, { align: 'center' });
+
+                    doc.setFontSize(18);
+                    doc.setTextColor(78, 205, 196); // Turquoise
+                    const subtitle = this.translations[this.currentLanguage]['subtitle'];
+                    doc.text(subtitle, 105, 55, { align: 'center' });
+
+                    // Boîte du résumé - agrandie pour contenir tout le contenu
+                    doc.setFillColor(0, 0, 0, 0.5); // Semi-transparent comme sur le web
+                    doc.roundedRect(20, 75, 170, 140, 5, 5, 'F');
+
+                    // Bordure de la boîte
+                    doc.setDrawColor(255, 255, 255);
+                    doc.setLineWidth(1);
+                    doc.roundedRect(20, 75, 170, 140, 5, 5, 'S');
+
+                    // Titre du résumé - centré
+                    doc.setFontSize(16);
+                    doc.setTextColor(78, 205, 196); // Couleur turquoise du web
+                    doc.setFont('helvetica', 'bold');
+                    const summaryTitle = this.translations[this.currentLanguage]['program-summary-title'];
+                    doc.text(summaryTitle, 105, 95, { align: 'center' });
+
+                    // Contenu du résumé (même format que sur le web)
+                    doc.setFontSize(16); // Taille encore augmentée pour plus de lisibilité
+                    doc.setFont('helvetica', 'normal');
+                    doc.setTextColor(255, 255, 255); // Blanc comme sur le web
+
+                    const objectifText = `${this.translations[this.currentLanguage]['objective-label']} ${this.getObjectifName(this.currentProgram.objectif)}`;
+                    const sessionsText = `${this.translations[this.currentLanguage]['sessions-label']} ${this.currentProgram.seancesParSemaine}`;
+                    const typeText = `${this.translations[this.currentLanguage]['training-type-label']} ${this.getTypeName(this.currentProgram.typeEntrainement)}`;
+                    const levelText = `${this.translations[this.currentLanguage]['level-label']} ${this.getNiveauName(this.currentProgram.niveau)}`;
+                    const durationText = `${this.translations[this.currentLanguage]['duration-label']} ${this.currentProgram.dureeSeance} ${this.translations[this.currentLanguage]['minutes-unit']}`;
+
+                    // Centrer parfaitement le texte dans la boîte agrandie
+                    doc.text(objectifText, 105, 115, { align: 'center' });
+                    doc.text(sessionsText, 105, 135, { align: 'center' });
+                    doc.text(typeText, 105, 155, { align: 'center' });
+                    doc.text(levelText, 105, 175, { align: 'center' });
+                    doc.text(durationText, 105, 195, { align: 'center' });
+
+                    // Pied de page
+                    doc.setFontSize(8);
+                    doc.setTextColor(150, 150, 150);
+                    const footerText = `Généré le ${new Date().toLocaleDateString(this.currentLanguage === 'fr' ? 'fr-FR' : this.currentLanguage === 'de' ? 'de-DE' : this.currentLanguage === 'es' ? 'es-ES' : 'en-US')}`;
+                    doc.text(footerText, 20, 285);
+                }
+
+                // Une page par jour d'entraînement - même style que sur le web
+                workoutDays.forEach((dayElement, index) => {
+                    doc.addPage();
+
+                    // Fond noir comme sur le web
+                    doc.setFillColor(0, 0, 0);
+                    doc.rect(0, 0, 210, 297, 'F');
+
+                    const dayTitle = dayElement.querySelector('.day-header').textContent;
+                    const dayColor = this.dayColors[index % this.dayColors.length];
+
+                    // En-tête coloré (exactement comme sur le web)
+                    if (dayColor) {
+                        const rgbColor = this.hexToRgb(dayColor.light);
+                        if (rgbColor) {
+                            doc.setFillColor(rgbColor.r, rgbColor.g, rgbColor.b);
+                            doc.roundedRect(20, 20, 170, 35, 5, 5, 'F'); // Même forme que sur le web
+                        }
+                    }
+
+                    // Rectangle coloré pour le titre du jour
+                    if (dayColor) {
+                        const rgbColor = this.hexToRgb(dayColor.light);
+                        if (rgbColor) {
+                            doc.setFillColor(rgbColor.r, rgbColor.g, rgbColor.b);
+                            doc.roundedRect(20, 20, 170, 35, 5, 5, 'F');
+                        }
+                    }
+
+                    // Bordure du rectangle
+                    doc.setDrawColor(0, 0, 0);
+                    doc.setLineWidth(1);
+                    doc.roundedRect(20, 20, 170, 35, 5, 5, 'S');
+
+                    // Titre du jour en noir sur fond coloré (bien centré)
+                    doc.setTextColor(0, 0, 0);
+                    doc.setFontSize(18);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(dayTitle, 105, 42, { align: 'center' }); // Centré parfaitement
+
+                    // Contenu des exercices (même style que sur le web)
+                    let yPosition = 75;
+
+                    const exercises = dayElement.querySelectorAll('.exercise');
+                    exercises.forEach((exercise, exerciseIndex) => {
+                        // Vérifier si on a assez d'espace pour le prochain exercice
+                        if (yPosition > 250) {
+                            doc.addPage();
+                            // Refaire le fond
+                            doc.setFillColor(0, 0, 0);
+                            doc.rect(0, 0, 210, 297, 'F');
+
+                            // Rectangle coloré pour le titre du jour (suite)
+                            if (dayColor) {
+                                const rgbColor = this.hexToRgb(dayColor.light);
+                                if (rgbColor) {
+                                    doc.setFillColor(rgbColor.r, rgbColor.g, rgbColor.b);
+                                    doc.roundedRect(20, 20, 170, 35, 5, 5, 'F');
+                                }
+                            }
+
+                            // Bordure du rectangle
+                            doc.setDrawColor(0, 0, 0);
+                            doc.setLineWidth(1);
+                            doc.roundedRect(20, 20, 170, 35, 5, 5, 'S');
+
+                            // Titre du jour en noir sur fond coloré (suite)
+                            doc.setTextColor(0, 0, 0);
+                            doc.setFontSize(18);
+                            doc.setFont('helvetica', 'bold');
+                            doc.text(dayTitle + ' (suite)', 105, 42, { align: 'center' }); // Même centrage
+
+                            yPosition = 75;
+                        }
+
+                        const exerciseName = exercise.querySelector('.exercise-name').textContent;
+                        const exerciseDetails = exercise.querySelector('.exercise-details').textContent;
+
+                        // Boîte de l'exercice (comme sur le web) - hauteur augmentée pour le texte plus grand
+                        doc.setFillColor(255, 255, 255, 0.05); // Semi-transparent comme sur le web
+                        doc.roundedRect(20, yPosition - 5, 170, 35, 4, 4, 'F');
+
+                        // Bordure de l'exercice
+                        doc.setDrawColor(255, 255, 255, 0.3);
+                        doc.setLineWidth(0.5);
+                        doc.roundedRect(20, yPosition - 5, 170, 35, 4, 4, 'S');
+
+                        // Nom de l'exercice (couleur turquoise comme sur le web)
+                        doc.setTextColor(78, 205, 196);
+                        doc.setFontSize(16); // Taille encore augmentée pour plus de lisibilité
+                        doc.setFont('helvetica', 'bold');
+                        doc.text(exerciseName, 105, yPosition + 12, { align: 'center' }); // Centré verticalement
+
+                        // Détails de l'exercice (gris comme sur le web)
+                        doc.setTextColor(200, 200, 200);
+                        doc.setFontSize(14); // Taille encore augmentée
+                        doc.setFont('helvetica', 'normal');
+                        doc.text(exerciseDetails, 105, yPosition + 27, { align: 'center' }); // Centré verticalement
+
+                        yPosition += 45; // Espacement augmenté pour les boîtes plus grandes
+                    });
+
+                    // Pied de page
+                    doc.setFontSize(8);
+                    doc.setTextColor(150, 150, 150);
+                    const pageNum = index + 2; // +2 car page 1 = résumé, page 2 = jour 1, etc.
+                    const totalPages = workoutDays.length + 1;
+                    doc.text(`Page ${pageNum}/${totalPages}`, 20, 285);
+                    const dateText = `Généré le ${new Date().toLocaleDateString(this.currentLanguage === 'fr' ? 'fr-FR' : this.currentLanguage === 'de' ? 'de-DE' : this.currentLanguage === 'es' ? 'es-ES' : 'en-US')}`;
+                    doc.text(dateText, 190, 285, { align: 'right' });
+                });
+
+                // Téléchargement
+                const fileName = this.currentLanguage === 'fr' ? 'programme-fitness.pdf' :
+                               this.currentLanguage === 'en' ? 'fitness-program.pdf' :
+                               this.currentLanguage === 'de' ? 'fitness-programm.pdf' :
+                               'programa-fitness.pdf';
+                doc.save(fileName);
+            }
+
+            createParticles() {
+                const particlesContainer = document.getElementById('particles');
+
+                // Création de 250 particules de différents types
+                for (let i = 0; i < 250; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+
+                    // Déterminer le type de particule (bulle, braise, ou mixte)
+                    const particleType = Math.random();
+                    if (particleType < 0.4) {
+                        particle.classList.add('bubble');
+                    } else if (particleType < 0.8) {
+                        particle.classList.add('ember');
+                    }
+                    // Sinon, particule normale avec animation mixte
+
+                    particle.style.left = Math.random() * 100 + '%';
+                    particle.style.width = Math.random() * 6 + 1 + 'px';
+                    particle.style.height = particle.style.width;
+                    particle.style.animationDelay = Math.random() * 20 + 's';
+                    particle.style.animationDuration = (Math.random() * 15 + 10) + 's';
+
+                    // Palette de couleurs étendue pour les particules
+                    const colors = [
+                        '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffffff',
+                        '#ffeaa7', '#dda0dd', '#ffb6c1', '#98d8c8', '#f7dc6f',
+                        '#bb8fce', '#f8c471', '#82e0aa', '#f1948a', '#85c1e9',
+                        '#f4d03f', '#af7ac5', '#ec7063', '#5dade2', '#f39c12',
+                        '#e74c3c', '#9b59b6', '#34495e', '#16a085', '#27ae60',
+                        '#2980b9', '#8e44ad', '#d35400', '#c0392b', '#7f8c8d',
+                        '#2c3e50', '#f1c40f', '#e67e22', '#1abc9c', '#3498db',
+                        '#e67e22', '#95a5a6', '#34495e', '#f1c40f'
+                    ];
+                    particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+
+                    particlesContainer.appendChild(particle);
+                }
+            }
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            new FitnessGenerator();
+        });
+    </script>
+</body>
+</html>
